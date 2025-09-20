@@ -1,0 +1,378 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Catwoman Stealth Game</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: linear-gradient(135deg, #1a1a1a, #2d1b69);
+            font-family: 'Arial', sans-serif;
+            overflow: hidden;
+            color: white;
+        }
+
+        #gameContainer {
+            position: relative;
+            width: 100vw;
+            height: 100vh;
+            background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><rect width="100" height="100" fill="%23000"/><circle cx="20" cy="20" r="2" fill="%23333"/><circle cx="80" cy="60" r="1.5" fill="%23444"/><circle cx="50" cy="80" r="1" fill="%23333"/></svg>') repeat;
+        }
+
+        #catwoman {
+            position: absolute;
+            width: 40px;
+            height: 40px;
+            background: linear-gradient(45deg, #4a0e4e, #8b1538);
+            border-radius: 50%;
+            border: 2px solid #ff6b35;
+            transition: all 0.3s ease;
+            cursor: pointer;
+            z-index: 10;
+        }
+
+        #catwoman::before {
+            content: '';
+            position: absolute;
+            top: -8px;
+            left: 10px;
+            width: 0;
+            height: 0;
+            border-left: 8px solid transparent;
+            border-right: 8px solid transparent;
+            border-bottom: 15px solid #4a0e4e;
+        }
+
+        .guard {
+            position: absolute;
+            width: 35px;
+            height: 35px;
+            background: linear-gradient(45deg, #8b0000, #ff4500);
+            border-radius: 50%;
+            border: 2px solid #ffd700;
+            animation: guardPatrol 4s linear infinite;
+        }
+
+        .guard::after {
+            content: '';
+            position: absolute;
+            width: 60px;
+            height: 60px;
+            background: radial-gradient(circle, rgba(255, 255, 0, 0.3) 0%, transparent 70%);
+            border-radius: 50%;
+            top: -12px;
+            left: -12px;
+            pointer-events: none;
+        }
+
+        @keyframes guardPatrol {
+            0% { transform: translateX(0) rotate(0deg); }
+            25% { transform: translateX(200px) rotate(90deg); }
+            50% { transform: translateX(200px) translateY(200px) rotate(180deg); }
+            75% { transform: translateX(0) translateY(200px) rotate(270deg); }
+            100% { transform: translateX(0) rotate(360deg); }
+        }
+
+        .treasure {
+            position: absolute;
+            width: 30px;
+            height: 30px;
+            background: linear-gradient(45deg, #ffd700, #ffed4e);
+            border-radius: 5px;
+            border: 2px solid #ff6b35;
+            animation: treasureGlow 2s ease-in-out infinite alternate;
+            cursor: pointer;
+        }
+
+        @keyframes treasureGlow {
+            from { box-shadow: 0 0 10px #ffd700; }
+            to { box-shadow: 0 0 20px #ffed4e, 0 0 30px #ffd700; }
+        }
+
+        #ui {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            z-index: 100;
+            background: rgba(0, 0, 0, 0.7);
+            padding: 15px;
+            border-radius: 10px;
+            border: 1px solid #ff6b35;
+        }
+
+        #gameOver, #levelComplete {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(0, 0, 0, 0.9);
+            padding: 30px;
+            border-radius: 15px;
+            border: 2px solid #ff6b35;
+            text-align: center;
+            z-index: 200;
+            display: none;
+        }
+
+        button {
+            background: linear-gradient(45deg, #4a0e4e, #8b1538);
+            color: white;
+            border: 2px solid #ff6b35;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            margin: 10px;
+            transition: all 0.3s ease;
+        }
+
+        button:hover {
+            background: linear-gradient(45deg, #8b1538, #4a0e4e);
+            transform: scale(1.05);
+        }
+
+        .stealth-mode {
+            opacity: 0.5;
+            filter: blur(1px);
+        }
+
+        #instructions {
+            position: absolute;
+            bottom: 20px;
+            left: 20px;
+            background: rgba(0, 0, 0, 0.7);
+            padding: 10px;
+            border-radius: 5px;
+            border: 1px solid #ff6b35;
+            max-width: 300px;
+        }
+    </style>
+</head>
+<body>
+    <div id="gameContainer">
+        <div id="ui">
+            <div>Score: <span id="score">0</span></div>
+            <div>Level: <span id="level">1</span></div>
+            <div>Lives: <span id="lives">3</span></div>
+            <div>Treasures: <span id="treasuresLeft">3</span></div>
+            <button onclick="toggleStealth()">Stealth Mode</button>
+        </div>
+
+        <div id="catwoman"></div>
+        
+        <div id="gameOver">
+            <h2>Mission Failed!</h2>
+            <p>Catwoman was caught by the guards.</p>
+            <button onclick="restartGame()">Try Again</button>
+        </div>
+
+        <div id="levelComplete">
+            <h2>Mission Complete!</h2>
+            <p>All treasures collected successfully!</p>
+            <button onclick="nextLevel()">Next Level</button>
+        </div>
+
+        <div id="instructions">
+            <h4>Controls:</h4>
+            <p>• Click to move Catwoman</p>
+            <p>• Collect all treasures</p>
+            <p>• Avoid guards' light beams</p>
+            <p>• Use Stealth Mode wisely</p>
+        </div>
+    </div>
+
+    <script>
+        class CatwomanGame {
+            constructor() {
+                this.score = 0;
+                this.level = 1;
+                this.lives = 3;
+                this.treasuresCollected = 0;
+                this.totalTreasures = 3;
+                this.isStealthMode = false;
+                this.stealthCooldown = false;
+                this.guards = [];
+                this.treasures = [];
+                this.catwoman = document.getElementById('catwoman');
+                this.gameContainer = document.getElementById('gameContainer');
+                
+                this.initGame();
+                this.setupEventListeners();
+            }
+
+            initGame() {
+                this.placeCatwoman();
+                this.createGuards();
+                this.createTreasures();
+                this.updateUI();
+                this.startGameLoop();
+            }
+
+            placeCatwoman() {
+                this.catwoman.style.left = '50px';
+                this.catwoman.style.top = '50px';
+            }
+
+            createGuards() {
+                const guardCount = Math.min(2 + this.level, 6);
+                this.guards = [];
+                
+                for (let i = 0; i < guardCount; i++) {
+                    const guard = document.createElement('div');
+                    guard.className = 'guard';
+                    guard.style.left = Math.random() * (window.innerWidth - 200) + 100 + 'px';
+                    guard.style.top = Math.random() * (window.innerHeight - 200) + 100 + 'px';
+                    guard.style.animationDelay = i * 0.5 + 's';
+                    this.gameContainer.appendChild(guard);
+                    this.guards.push(guard);
+                }
+            }
+
+            createTreasures() {
+                this.treasures = [];
+                this.treasuresCollected = 0;
+                
+                for (let i = 0; i < this.totalTreasures; i++) {
+                    const treasure = document.createElement('div');
+                    treasure.className = 'treasure';
+                    treasure.style.left = Math.random() * (window.innerWidth - 100) + 50 + 'px';
+                    treasure.style.top = Math.random() * (window.innerHeight - 100) + 50 + 'px';
+                    treasure.onclick = () => this.collectTreasure(treasure);
+                    this.gameContainer.appendChild(treasure);
+                    this.treasures.push(treasure);
+                }
+            }
+
+            setupEventListeners() {
+                this.gameContainer.addEventListener('click', (e) => {
+                    if (e.target === this.gameContainer) {
+                        this.moveCatwoman(e.clientX, e.clientY);
+                    }
+                });
+            }
+
+            moveCatwoman(x, y) {
+                this.catwoman.style.left = (x - 20) + 'px';
+                this.catwoman.style.top = (y - 20) + 'px';
+            }
+
+            collectTreasure(treasure) {
+                treasure.remove();
+                this.treasuresCollected++;
+                this.score += 100 * this.level;
+                this.updateUI();
+                
+                if (this.treasuresCollected >= this.totalTreasures) {
+                    this.levelComplete();
+                }
+            }
+
+            checkCollisions() {
+                if (this.isStealthMode) return;
+                
+                const catwomanRect = this.catwoman.getBoundingClientRect();
+                
+                this.guards.forEach(guard => {
+                    const guardRect = guard.getBoundingClientRect();
+                    const distance = Math.sqrt(
+                        Math.pow(catwomanRect.left - guardRect.left, 2) + 
+                        Math.pow(catwomanRect.top - guardRect.top, 2)
+                    );
+                    
+                    if (distance < 60) {
+                        this.gameOver();
+                    }
+                });
+            }
+
+            toggleStealth() {
+                if (this.stealthCooldown) return;
+                
+                this.isStealthMode = !this.isStealthMode;
+                this.catwoman.classList.toggle('stealth-mode', this.isStealthMode);
+                
+                if (this.isStealthMode) {
+                    setTimeout(() => {
+                        this.isStealthMode = false;
+                        this.catwoman.classList.remove('stealth-mode');
+                        this.stealthCooldown = true;
+                        setTimeout(() => this.stealthCooldown = false, 3000);
+                    }, 2000);
+                }
+            }
+
+            updateUI() {
+                document.getElementById('score').textContent = this.score;
+                document.getElementById('level').textContent = this.level;
+                document.getElementById('lives').textContent = this.lives;
+                document.getElementById('treasuresLeft').textContent = this.totalTreasures - this.treasuresCollected;
+            }
+
+            startGameLoop() {
+                this.gameInterval = setInterval(() => {
+                    this.checkCollisions();
+                }, 100);
+            }
+
+            gameOver() {
+                clearInterval(this.gameInterval);
+                document.getElementById('gameOver').style.display = 'block';
+                this.lives--;
+            }
+
+            levelComplete() {
+                clearInterval(this.gameInterval);
+                document.getElementById('levelComplete').style.display = 'block';
+            }
+
+            restartGame() {
+                this.guards.forEach(guard => guard.remove());
+                this.treasures.forEach(treasure => treasure.remove());
+                document.getElementById('gameOver').style.display = 'none';
+                
+                if (this.lives > 0) {
+                    this.initGame();
+                } else {
+                    this.score = 0;
+                    this.level = 1;
+                    this.lives = 3;
+                    this.initGame();
+                }
+            }
+
+            nextLevel() {
+                this.level++;
+                this.guards.forEach(guard => guard.remove());
+                this.treasures.forEach(treasure => treasure.remove());
+                document.getElementById('levelComplete').style.display = 'none';
+                this.initGame();
+            }
+        }
+
+        // Global functions for button clicks
+        let game;
+        
+        window.onload = () => {
+            game = new CatwomanGame();
+        };
+        
+        function toggleStealth() {
+            game.toggleStealth();
+        }
+        
+        function restartGame() {
+            game.restartGame();
+        }
+        
+        function nextLevel() {
+            game.nextLevel();
+        }
+    </script>
+</body>
+</html>
